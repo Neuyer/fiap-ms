@@ -11,6 +11,8 @@ services:
       - mongodb_data:/data/db
   # ms-client
   ms-client:
+    networks:
+      - "ms-network"
     build: ./ms-client
     container_name: ms-client
     environment:
