@@ -1,0 +1,65 @@
+version: '3.8'
+services:
+  # MongoDB Service
+  mongo_db:
+    networks:
+      - "ms-network"
+    image: mongo:latest
+    ports:
+      - "27017:27017"
+    volumes:
+      - mongodb_data:/data/db
+  # ms-client
+  ms-client:
+    build: ./ms-client
+    container_name: ms-client
+    environment:
+      SPRING_APPLICATION_JSON: '{
+              "spring.data.mongodb.uri" : "mongodb://mongo_db:27017/ms-client",
+              "spring.data.mongodb.initialization-mode": "always",
+              "server.port":"8080"
+            }'
+    ports:
+      - "8081:8080"
+    depends_on:
+      - "mongo_db"
+  # ms-product
+  ms-product:
+    networks:
+      - "ms-network"
+    build: ./ms-product
+    container_name: ms-product
+    environment:
+      SPRING_APPLICATION_JSON: '{
+              "spring.data.mongodb.uri" : "mongodb://mongo_db:27017/ms-product",
+              "spring.data.mongodb.initialization-mode": "always",
+              "server.port":"8080"
+            }'
+    ports:
+      - "8082:8080"
+    depends_on:
+      - "mongo_db"
+
+  # ms-stock
+  ms-stock:
+    networks:
+      - "ms-network"
+    build: ./ms-stock
+    container_name: ms-stock
+    environment:
+      SPRING_APPLICATION_JSON: '{
+              "spring.data.mongodb.uri" : "mongodb://mongo_db:27017/ms-stock",
+              "spring.data.mongodb.initialization-mode": "always",
+              "server.port":"8080"
+            }'
+    ports:
+      - "8083:8080"
+    depends_on:
+      - "mongo_db"
+volumes:
+  mongodb_data:
+networks:
+  ms-network:
+    driver: bridge
+    driver_opts:
+      com.docker.network.bridge.host_binding_ipv4: "127.0.0.1"
