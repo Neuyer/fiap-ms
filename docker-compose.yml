@@ -1,6 +1,14 @@
 version: '3.8'
 services:
   # MongoDB Service
+  kafka:
+    container_name: kafka
+    image: apache/kafka:latest
+    networks:
+      - "ms-network"
+    ports:
+      - "9092:9092"
+  # MongoDB Service
   mongo_db:
     networks:
       - "ms-network"
@@ -41,7 +49,6 @@ services:
       - "8082:8080"
     depends_on:
       - "mongo_db"
-
   # ms-stock
   ms-stock:
     networks:
@@ -58,6 +65,55 @@ services:
       - "8083:8080"
     depends_on:
       - "mongo_db"
+  # ms-payment
+  ms-payment:
+    networks:
+      - "ms-network"
+    build: ./ms-payment
+    container_name: ms-payment
+    environment:
+      SPRING_APPLICATION_JSON: '{
+              "spring.data.mongodb.uri" : "mongodb://mongo_db:27017/ms-payment",
+              "spring.data.mongodb.initialization-mode": "always",
+              "server.port":"8080"
+            }'
+    ports:
+      - "8084:8080"
+    depends_on:
+      - "mongo_db"
+  # ms-order
+  ms-order:
+    networks:
+      - "ms-network"
+    build: ./ms-order
+    container_name: ms-order
+    environment:
+      SPRING_APPLICATION_JSON: '{
+                    "spring.data.mongodb.uri" : "mongodb://mongo_db:27017/order",
+                    "spring.data.mongodb.initialization-mode": "always",
+                    "spring.kafka.bootstrap-servers": "http://kafka:9092",
+                    "server.port":"8080"
+                  }'
+    ports:
+      - "8085:8080"
+    depends_on:
+      - "kafka"
+      - "mongo_db"
+  #ms-order-receiver
+  ms-order-receiver-app:
+    build: ./ms-order-receiver
+    container_name: ms-order-receiver
+    networks:
+      - "ms-network"
+    ports:
+      - "8080:8080"
+    depends_on:
+      - "kafka"
+    environment:
+      SPRING_APPLICATION_JSON: '{
+                    "spring.kafka.bootstrap-servers": "http://kafka:9092",
+                    "server.port":"8080"
+                  }'
 volumes:
   mongodb_data:
 networks:
